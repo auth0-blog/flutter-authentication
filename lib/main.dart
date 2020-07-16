@@ -27,7 +27,7 @@ const AUTH0_ISSUER = 'https://$AUTH0_DOMAIN';
 /// -----------------------------------
 
 class Profile extends StatelessWidget {
-  final logoutAction;
+  final Future<void> Function() logoutAction;
   final String name;
   final String picture;
 
@@ -54,8 +54,8 @@ class Profile extends StatelessWidget {
         Text('Name: $name'),
         SizedBox(height: 48.0),
         RaisedButton(
-          onPressed: () {
-            logoutAction();
+          onPressed: () async {
+            await logoutAction();
           },
           child: Text('Logout'),
         ),
@@ -69,7 +69,7 @@ class Profile extends StatelessWidget {
 /// -----------------------------------
 
 class Login extends StatelessWidget {
-  final loginAction;
+  final Future<void> Function() loginAction;
   final String loginError;
 
   const Login(this.loginAction, this.loginError);
@@ -80,8 +80,8 @@ class Login extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         RaisedButton(
-          onPressed: () {
-            loginAction();
+          onPressed: () async {
+            await loginAction();
           },
           child: Text('Login'),
         ),
@@ -132,7 +132,7 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Map<String, dynamic> parseIdToken(String idToken) {
+  Map<String, Object> parseIdToken(String idToken) {
     final parts = idToken.split(r'.');
     assert(parts.length == 3);
 
@@ -140,7 +140,7 @@ class _MyAppState extends State<MyApp> {
         utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
   }
 
-  Future<Map<String, dynamic>> getUserDetails(String accessToken) async {
+  Future<Map<String, Object>> getUserDetails(String accessToken) async {
     final url = 'https://$AUTH0_DOMAIN/userinfo';
     final response = await http.get(
       url,
