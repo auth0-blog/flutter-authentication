@@ -2,25 +2,26 @@
 ///          External Packages
 /// -----------------------------------
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 final FlutterAppAuth appAuth = FlutterAppAuth();
-final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
+const FlutterSecureStorage secureStorage = FlutterSecureStorage();
 
 /// -----------------------------------
 ///           Auth0 Variables
 /// -----------------------------------
 
-const AUTH0_DOMAIN = 'YOUR-AUTH0-DOMAIN';
-const AUTH0_CLIENT_ID = 'YOUR-AUTH0-CLIENT-ID';
+const String AUTH0_DOMAIN = 'YOUR-AUTH0-DOMAIN';
+const String AUTH0_CLIENT_ID = 'YOUR-AUTH0-CLIENT-ID';
 
-const AUTH0_REDIRECT_URI = 'com.auth0.flutterdemo://login-callback';
-const AUTH0_ISSUER = 'https://$AUTH0_DOMAIN';
+const String AUTH0_REDIRECT_URI = 'com.auth0.flutterdemo://login-callback';
+const String AUTH0_ISSUER = 'https://$AUTH0_DOMAIN';
 
 /// -----------------------------------
 ///           Profile Widget
@@ -31,7 +32,8 @@ class Profile extends StatelessWidget {
   final String name;
   final String picture;
 
-  Profile(this.logoutAction, this.name, this.picture);
+  const Profile(this.logoutAction, this.name, this.picture, {Key key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +44,7 @@ class Profile extends StatelessWidget {
           width: 150,
           height: 150,
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.blue, width: 4.0),
+            border: Border.all(color: Colors.blue, width: 4),
             shape: BoxShape.circle,
             image: DecorationImage(
               fit: BoxFit.fill,
@@ -50,14 +52,14 @@ class Profile extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(height: 24.0),
+        const SizedBox(height: 24),
         Text('Name: $name'),
-        SizedBox(height: 48.0),
+        const SizedBox(height: 48),
         RaisedButton(
           onPressed: () async {
             await logoutAction();
           },
-          child: Text('Logout'),
+          child: const Text('Logout'),
         ),
       ],
     );
@@ -72,7 +74,7 @@ class Login extends StatelessWidget {
   final Future<void> Function() loginAction;
   final String loginError;
 
-  const Login(this.loginAction, this.loginError);
+  const Login(this.loginAction, this.loginError, {Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +85,7 @@ class Login extends StatelessWidget {
           onPressed: () async {
             await loginAction();
           },
-          child: Text('Login'),
+          child: const Text('Login'),
         ),
         Text(loginError ?? ''),
       ],
@@ -95,9 +97,11 @@ class Login extends StatelessWidget {
 ///                 App
 /// -----------------------------------
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatefulWidget {
+  const MyApp({Key key}) : super(key: key);
+
   @override
   _MyAppState createState() => _MyAppState();
 }
@@ -119,11 +123,11 @@ class _MyAppState extends State<MyApp> {
       title: 'Auth0 Demo',
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Auth0 Demo'),
+          title: const Text('Auth0 Demo'),
         ),
         body: Center(
           child: isBusy
-              ? CircularProgressIndicator()
+              ? const CircularProgressIndicator()
               : isLoggedIn
                   ? Profile(logoutAction, name, picture)
                   : Login(loginAction, errorMessage),
@@ -133,7 +137,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Map<String, Object> parseIdToken(String idToken) {
-    final parts = idToken.split(r'.');
+    final List<String> parts = idToken.split('.');
     assert(parts.length == 3);
 
     return jsonDecode(
@@ -141,10 +145,10 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<Map<String, Object>> getUserDetails(String accessToken) async {
-    final url = 'https://$AUTH0_DOMAIN/userinfo';
-    final response = await http.get(
+    const String url = 'https://$AUTH0_DOMAIN/userinfo';
+    final http.Response response = await http.get(
       url,
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: <String, String>{'Authorization': 'Bearer $accessToken'},
     );
 
     if (response.statusCode == 200) {
@@ -167,13 +171,14 @@ class _MyAppState extends State<MyApp> {
           AUTH0_CLIENT_ID,
           AUTH0_REDIRECT_URI,
           issuer: 'https://$AUTH0_DOMAIN',
-          scopes: ['openid', 'profile', 'offline_access'],
+          scopes: <String>['openid', 'profile', 'offline_access'],
           // promptValues: ['login']
         ),
       );
 
-      final idToken = parseIdToken(result.idToken);
-      final profile = await getUserDetails(result.accessToken);
+      final Map<String, Object> idToken = parseIdToken(result.idToken);
+      final Map<String, Object> profile =
+          await getUserDetails(result.accessToken);
 
       await secureStorage.write(
           key: 'refresh_token', value: result.refreshToken);
@@ -184,8 +189,8 @@ class _MyAppState extends State<MyApp> {
         name = idToken['name'];
         picture = profile['picture'];
       });
-    } catch (e, s) {
-      print('login error: $e - stack: $s');
+    } on Exception catch (e, s) {
+      debugPrint('login error: $e - stack: $s');
 
       setState(() {
         isBusy = false;
@@ -195,7 +200,7 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  void logoutAction() async {
+  Future<void> logoutAction() async {
     await secureStorage.delete(key: 'refresh_token');
     setState(() {
       isLoggedIn = false;
@@ -209,8 +214,9 @@ class _MyAppState extends State<MyApp> {
     super.initState();
   }
 
-  void initAction() async {
-    final storedRefreshToken = await secureStorage.read(key: 'refresh_token');
+  Future<void> initAction() async {
+    final String storedRefreshToken =
+        await secureStorage.read(key: 'refresh_token');
     if (storedRefreshToken == null) return;
 
     setState(() {
@@ -218,17 +224,19 @@ class _MyAppState extends State<MyApp> {
     });
 
     try {
-      final response = await appAuth.token(TokenRequest(
+      final TokenResponse response = await appAuth.token(TokenRequest(
         AUTH0_CLIENT_ID,
         AUTH0_REDIRECT_URI,
         issuer: AUTH0_ISSUER,
         refreshToken: storedRefreshToken,
       ));
 
-      final idToken = parseIdToken(response.idToken);
-      final profile = await getUserDetails(response.accessToken);
+      final Map<String, Object> idToken = parseIdToken(response.idToken);
+      final Map<String, Object> profile =
+          await getUserDetails(response.accessToken);
 
-      secureStorage.write(key: 'refresh_token', value: response.refreshToken);
+      await secureStorage.write(
+          key: 'refresh_token', value: response.refreshToken);
 
       setState(() {
         isBusy = false;
@@ -236,9 +244,9 @@ class _MyAppState extends State<MyApp> {
         name = idToken['name'];
         picture = profile['picture'];
       });
-    } catch (e, s) {
-      print('error on refresh token: $e - stack: $s');
-      logoutAction();
+    } on Exception catch (e, s) {
+      debugPrint('error on refresh token: $e - stack: $s');
+      await logoutAction();
     }
   }
 }
