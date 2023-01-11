@@ -25,7 +25,6 @@ dependencies:
   auth0_flutter: ^1.0.2
   flutter:
     sdk: flutter
-  http: ^0.13.5
 
 dev_dependencies:
   flutter_test:

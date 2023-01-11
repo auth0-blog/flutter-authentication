@@ -2,12 +2,11 @@
 ///          External Packages
 /// -----------------------------------
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
-import 'package:http/http.dart' as http;
 import 'package:auth0_flutter/auth0_flutter.dart';
+
+const appScheme = 'flutterdemo';
 
 /// -----------------------------------
 ///           Profile Widget
@@ -127,7 +126,7 @@ class _MyAppState extends State<MyApp> {
     });
 
     try {
-      final credentials = await auth0.webAuthentication(scheme: 'flutterdemo').login();
+      final Credentials credentials = await auth0.webAuthentication(scheme: appScheme).login();
 
       setState(() {
         isBusy = false;
@@ -144,7 +143,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> logoutAction() async {
-    await auth0.webAuthentication(scheme: 'flutterdemo').logout();
+    await auth0.webAuthentication(scheme: appScheme).logout();
 
     setState(() {
       _credentials = null;
@@ -155,7 +154,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    auth0 = Auth0('dev-bajcmartinez.eu.auth0.com', '4OZnEzQiVE8t1YguYMKsVReXDdHiH5Cj');
+    auth0 = Auth0('{domain}', '{clientId}');
     errorMessage = '';
   }
 }
